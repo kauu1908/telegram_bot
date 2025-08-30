@@ -10,4 +10,3 @@ services:
         fromSecret: true
       - key: MONGODB_URI
         fromSecret: true
-MONGODB_URI
