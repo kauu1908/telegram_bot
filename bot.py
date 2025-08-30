@@ -48,7 +48,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 def get_database():
     try:
         # Get connection string from environment variable
-        mongodb_uri = os.environ.get('mongodb+srv://kaushiktadavi167_db_user:<Kauzma$1908>@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+        mongodb_uri = os.environ.get('mongodb+srv://kaushiktadavi167_db_user:Kauzma$1908@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
         if not mongodb_uri:
             logger.error("MONGODB_URI environment variable is not set!")
             return None
@@ -760,3 +760,4 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Bot stopped with error: {e}")
         print(f"❌ Bot stopped with error: {e}")
+
