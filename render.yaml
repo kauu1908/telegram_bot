@@ -6,7 +6,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python bot.py
     envVars:
-      - key: 8443032865:AAEM72TrYxY5GijrS2rO67uT4fuKYGLylO0
+      - key: BOT_TOKEN
         fromSecret: true
-      - key: mongodb+srv://kaushiktadavi167_db_user:<Kauzma$1908>@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      - key: MONGODB_URI
         fromSecret: true
+MONGODB_URI
