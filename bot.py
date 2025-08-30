@@ -2,7 +2,7 @@ import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import threading
 import queue
 import os
@@ -26,14 +26,36 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
+# ==================== SETUP ====================
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+# ==================== CONFIGURATION ====================
+# Get bot token from environment variable
+BOT_TOKEN = os.environ.get('8443032865:AAEM72TrYxY5GijrS2rO67uT4fuKYGLylO0')
+if not BOT_TOKEN:
+    logger.error("BOT_TOKEN environment variable is not set!")
+    exit(1)
+
+# ==================== INITIALIZE BOT ====================
+bot = telebot.TeleBot(BOT_TOKEN)
+
 # ==================== DATABASE SETUP ====================
 # MongoDB connection
 def get_database():
     try:
         # Get connection string from environment variable
         mongodb_uri = os.environ.get('mongodb+srv://kaushiktadavi167_db_user:<Kauzma$1908>@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+        if not mongodb_uri:
+            logger.error("MONGODB_URI environment variable is not set!")
+            return None
+            
         client = MongoClient(mongodb_uri)
         db = client.telegram_bot
+        logger.info("✅ Successfully connected to MongoDB!")
         return db
     except Exception as e:
         logging.error(f"Database connection error: {e}")
@@ -45,20 +67,6 @@ class CustomJSONEncoder(json.JSONEncoder):
         if isinstance(o, ObjectId):
             return str(o)
         return super().default(o)
-
-# ==================== SETUP ====================
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
-
-# ==================== CONFIGURATION ====================
-# Get bot token from environment variable
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-
-# ==================== INITIALIZE BOT ====================
-bot = telebot.TeleBot(BOT_TOKEN)
 
 # ==================== DATA STRUCTURES ====================
 # Initialize database connection
