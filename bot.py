@@ -15,14 +15,14 @@ from urllib.parse import quote_plus
 
 # ==================== ENVIRONMENT VARIABLE VALIDATION ====================
 # Get bot token from environment variable
-BOT_TOKEN = os.environ.get('8443032865:AAEM72TrYxY5GijrS2rO67uT4fuKYGLylO0')
+BOT_TOKEN = os.environ.get('BOT_TOKEN')  # ✅ Just the name, not the actual token
 if not BOT_TOKEN:
     print("❌ ERROR: BOT_TOKEN environment variable is not set!")
     print("💡 Please set BOT_TOKEN environment variable in Render.com")
     exit(1)
 
 # Get MongoDB URI from environment variable  
-MONGODB_URI = os.environ.get('mongodb+srv://kaushiktadavi167_db_user:Kauzma%241908@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+MONGODB_URI = os.environ.get('MONGODB_URI')  # ✅ Just the name, not the actual URI
 if not MONGODB_URI:
     print("❌ ERROR: MONGODB_URI environment variable is not set!")
     print("💡 Please set MONGODB_URI environment variable in Render.com")
@@ -792,4 +792,5 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Bot stopped with error: {e}")
         print(f"❌ Bot stopped with error: {e}")
+
 
