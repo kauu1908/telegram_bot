@@ -11,6 +11,24 @@ from threading import Thread
 from pymongo import MongoClient
 from bson import ObjectId
 import json
+from urllib.parse import quote_plus
+
+# ==================== ENVIRONMENT VARIABLE VALIDATION ====================
+# Get bot token from environment variable
+BOT_TOKEN = os.environ.get('8443032865:AAEM72TrYxY5GijrS2rO67uT4fuKYGLylO0')
+if not BOT_TOKEN:
+    print("❌ ERROR: BOT_TOKEN environment variable is not set!")
+    print("💡 Please set BOT_TOKEN environment variable in Render.com")
+    exit(1)
+
+# Get MongoDB URI from environment variable  
+MONGODB_URI = os.environ.get('mongodb+srv://kaushiktadavi167_db_user:Kauzma%241908@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+if not MONGODB_URI:
+    print("❌ ERROR: MONGODB_URI environment variable is not set!")
+    print("💡 Please set MONGODB_URI environment variable in Render.com")
+    exit(1)
+
+print("✅ Environment variables loaded successfully!")
 
 # Initialize Flask app for keeping alive
 app = Flask('')
@@ -19,12 +37,17 @@ app = Flask('')
 def home():
     return "Bot is alive and running!"
 
+@app.route('/health')
+def health():
+    return "✅ Bot is healthy and running!"
+
 def run():
     app.run(host='0.0.0.0', port=8080)
 
 def keep_alive():
     t = Thread(target=run)
     t.start()
+    print("✅ Flask keep-alive server started!")
 
 # ==================== SETUP ====================
 logging.basicConfig(
@@ -33,32 +56,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== CONFIGURATION ====================
-# Get bot token from environment variable
-BOT_TOKEN = os.environ.get('8443032865:AAEM72TrYxY5GijrS2rO67uT4fuKYGLylO0')
-if not BOT_TOKEN:
-    logger.error("BOT_TOKEN environment variable is not set!")
-    exit(1)
-
 # ==================== INITIALIZE BOT ====================
 bot = telebot.TeleBot(BOT_TOKEN)
+print("✅ Telegram bot initialized successfully!")
 
 # ==================== DATABASE SETUP ====================
 # MongoDB connection
 def get_database():
     try:
-        # Get connection string from environment variable
-        mongodb_uri = os.environ.get('mongodb+srv://kaushiktadavi167_db_user:Kauzma$1908@cluster0.7awxfky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
-        if not mongodb_uri:
-            logger.error("MONGODB_URI environment variable is not set!")
-            return None
-            
-        client = MongoClient(mongodb_uri)
+        client = MongoClient(MONGODB_URI)
+        # Test the connection
+        client.admin.command('ping')
         db = client.telegram_bot
         logger.info("✅ Successfully connected to MongoDB!")
         return db
     except Exception as e:
-        logging.error(f"Database connection error: {e}")
+        logger.error(f"❌ Database connection error: {e}")
+        print(f"❌ Failed to connect to MongoDB: {e}")
         return None
 
 # Custom JSON encoder to handle ObjectId
@@ -81,64 +95,82 @@ queues_collection = db.queues if db else None
 def save_user(user_id, user_data):
     """Save user data to database"""
     if users_collection:
-        users_collection.update_one(
-            {'user_id': user_id},
-            {'$set': user_data},
-            upsert=True
-        )
+        try:
+            users_collection.update_one(
+                {'user_id': user_id},
+                {'$set': user_data},
+                upsert=True
+            )
+        except Exception as e:
+            logger.error(f"Error saving user {user_id}: {e}")
 
 def get_user(user_id):
     """Get user data from database"""
     if users_collection:
-        return users_collection.find_one({'user_id': user_id})
+        try:
+            return users_collection.find_one({'user_id': user_id})
+        except Exception as e:
+            logger.error(f"Error getting user {user_id}: {e}")
     return None
 
 def save_conversation(user1_id, user2_id):
     """Save conversation to database"""
     if conversations_collection:
-        conversations_collection.insert_one({
-            'user1_id': user1_id,
-            'user2_id': user2_id,
-            'started_at': datetime.now(),
-            'active': True
-        })
+        try:
+            conversations_collection.insert_one({
+                'user1_id': user1_id,
+                'user2_id': user2_id,
+                'started_at': datetime.now(),
+                'active': True
+            })
+        except Exception as e:
+            logger.error(f"Error saving conversation: {e}")
 
 def end_conversation_in_db(user_id):
     """Mark conversation as ended in database"""
     if conversations_collection:
-        conversations_collection.update_one(
-            {'$or': [{'user1_id': user_id}, {'user2_id': user_id}], 'active': True},
-            {'$set': {'active': False, 'ended_at': datetime.now()}}
-        )
+        try:
+            conversations_collection.update_one(
+                {'$or': [{'user1_id': user_id}, {'user2_id': user_id}], 'active': True},
+                {'$set': {'active': False, 'ended_at': datetime.now()}}
+            )
+        except Exception as e:
+            logger.error(f"Error ending conversation: {e}")
 
 def save_queue_state():
     """Save queue state to database"""
     if queues_collection:
-        queues_collection.update_one(
-            {'name': 'waiting_queues'},
-            {'$set': {
-                'listener_male': waiting_queues['listener']['male'],
-                'listener_female': waiting_queues['listener']['female'],
-                'talker_male': waiting_queues['talker']['male'],
-                'talker_female': waiting_queues['talker']['female'],
-                'mommy': waiting_queues['mommy'],
-                'daddy': waiting_queues['daddy'],
-                'last_updated': datetime.now()
-            }},
-            upsert=True
-        )
+        try:
+            queues_collection.update_one(
+                {'name': 'waiting_queues'},
+                {'$set': {
+                    'listener_male': waiting_queues['listener']['male'],
+                    'listener_female': waiting_queues['listener']['female'],
+                    'talker_male': waiting_queues['talker']['male'],
+                    'talker_female': waiting_queues['talker']['female'],
+                    'mommy': waiting_queues['mommy'],
+                    'daddy': waiting_queues['daddy'],
+                    'last_updated': datetime.now()
+                }},
+                upsert=True
+            )
+        except Exception as e:
+            logger.error(f"Error saving queue state: {e}")
 
 def load_queue_state():
     """Load queue state from database"""
     if queues_collection:
-        queue_data = queues_collection.find_one({'name': 'waiting_queues'})
-        if queue_data:
-            waiting_queues['listener']['male'] = queue_data.get('listener_male', [])
-            waiting_queues['listener']['female'] = queue_data.get('listener_female', [])
-            waiting_queues['talker']['male'] = queue_data.get('talker_male', [])
-            waiting_queues['talker']['female'] = queue_data.get('talker_female', [])
-            waiting_queues['mommy'] = queue_data.get('mommy', [])
-            waiting_queues['daddy'] = queue_data.get('daddy', [])
+        try:
+            queue_data = queues_collection.find_one({'name': 'waiting_queues'})
+            if queue_data:
+                waiting_queues['listener']['male'] = queue_data.get('listener_male', [])
+                waiting_queues['listener']['female'] = queue_data.get('listener_female', [])
+                waiting_queues['talker']['male'] = queue_data.get('talker_male', [])
+                waiting_queues['talker']['female'] = queue_data.get('talker_female', [])
+                waiting_queues['mommy'] = queue_data.get('mommy', [])
+                waiting_queues['daddy'] = queue_data.get('daddy', [])
+        except Exception as e:
+            logger.error(f"Error loading queue state: {e}")
 
 # ==================== DATA STRUCTURES ====================
 # Waiting queues for different roles
@@ -431,7 +463,7 @@ def handle_gender_selection(user_id, call, data):
     )
     
     add_to_waiting_queue(user_id)
-    matchmaking_queue.put(user_id)
+        matchmaking_queue.put(user_id)
 
 def handle_end_conversation(user_id, call):
     """Handle end conversation action"""
@@ -760,4 +792,3 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Bot stopped with error: {e}")
         print(f"❌ Bot stopped with error: {e}")
-
