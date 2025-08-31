@@ -463,7 +463,7 @@ def handle_gender_selection(user_id, call, data):
     )
     
     add_to_waiting_queue(user_id)
-        matchmaking_queue.put(user_id)
+    matchmaking_queue.put(user_id)  # Fixed indentation
 
 def handle_end_conversation(user_id, call):
     """Handle end conversation action"""
@@ -792,3 +792,4 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Bot stopped with error: {e}")
         print(f"❌ Bot stopped with error: {e}")
+
